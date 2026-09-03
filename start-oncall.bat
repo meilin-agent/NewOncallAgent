@@ -85,7 +85,9 @@ echo [ok] Milvus 已就绪
 
 rem ========== 6. 启动告警模拟器 test-server（原生进程） ==========
 echo [3/6] 准备告警模拟器 test-server...
-start "OncallAgent-testserver" /d "%~dp0" ".venv\Scripts\python.exe" "manifest\docker\prometheusTestServer\main.py"
+rem 隐藏窗口启动（日志写入 logs\testserver.log，排查问题看这里）
+if not exist "logs" mkdir logs
+powershell -NoProfile -Command "Start-Process -WindowStyle Hidden -FilePath '%~dp0.venv\Scripts\python.exe' -ArgumentList '-u','manifest\docker\prometheusTestServer\main.py' -WorkingDirectory '%~dp0' -RedirectStandardOutput '%~dp0logs\testserver.log' -RedirectStandardError '%~dp0logs\testserver-error.log'"
 set /a tries=0
 :wait_testserver
 set /a tries+=1
@@ -126,11 +128,13 @@ if errorlevel 1 (
     :warmup_done
 rem ========== 8. 启动后端 ==========
 echo [4/6] 启动后端 http://localhost:6872 ...
-start "OncallAgent-Backend" /d "%~dp0" cmd /k ".venv\Scripts\python.exe main.py"
+rem 隐藏窗口启动（日志写入 logs\backend.log）
+powershell -NoProfile -Command "Start-Process -WindowStyle Hidden -FilePath '%~dp0.venv\Scripts\python.exe' -ArgumentList '-u','main.py' -WorkingDirectory '%~dp0' -RedirectStandardOutput '%~dp0logs\backend.log' -RedirectStandardError '%~dp0logs\backend-error.log'"
 
 rem ========== 9. 启动前端 ==========
 echo [5/6] 启动前端 http://localhost:8080 ...
-start "OncallAgent-Frontend" /d "%~dp0frontend" cmd /k "python -m http.server 8080"
+rem 隐藏窗口启动（日志写入 logs\frontend.log）
+powershell -NoProfile -Command "Start-Process -WindowStyle Hidden -FilePath 'python' -ArgumentList '-u','-m','http.server','8080' -WorkingDirectory '%~dp0frontend' -RedirectStandardOutput '%~dp0logs\frontend.log' -RedirectStandardError '%~dp0logs\frontend-error.log'"
 
 rem ========== 10. 等待后端就绪并打开浏览器 ==========
 echo [6/6] 等待后端就绪...
@@ -154,6 +158,7 @@ start http://localhost:8080
 echo.
 echo ==========================================
 echo   启动完成！演示完成后运行 stop-oncall.bat
+echo   三个服务已在后台隐藏窗口运行，日志见 logs\ 目录
 echo   提示：告警模拟器启动约 20 秒后，
 echo   Prometheus 才会触发模拟告警，再点"AI Ops"
 echo ==========================================

@@ -14,3 +14,6 @@ manifest/docker/volumes/
 docs/*.md
 !docs/告警处理手册.md
 !docs/cpu_high_usage.md
+
+# 服务日志
+logs/
